@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AgroSense IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --verde: #2d6a4f;
+    --verde-claro: #52b788;
+    --verde-neon: #74c69d;
+    --tierra: #b7791f;
+    --agua: #4895ef;
+    --alerta: #f77f00;
+    --peligro: #d62828;
+    --fondo: #0a0f0d;
+    --fondo2: #111a14;
+    --fondo3: #182218;
+    --texto: #e8f5e9;
+    --texto2: #a5c8a7;
+    --borde: #2a3d2c;
+    --card: #131e15;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Fondo animado */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(45,106,79,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(72,149,239,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+  /* HEADER */
+  header {
+    padding: 24px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--verde), var(--verde-neon));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--verde-neon); }
+
+  .status-dot {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--verde-neon);
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--verde-neon);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    padding: 12px 20px 0;
+    gap: 4px;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .tab {
+    flex: 1; padding: 10px 4px;
+    background: none; border: none;
+    color: var(--texto2);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .tab.active {
+    color: var(--verde-neon);
+    border-bottom-color: var(--verde-neon);
+  }
+
+  /* PANELS */
+  .panel { display: none; padding: 16px 20px; }
+  .panel.active { display: block; }
+
+  /* TIEMPO */
+  .timestamp {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--texto2);
+    margin-bottom: 14px;
+    opacity: 0.7;
+  }
+
+  /* CARDS SENSORES */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .grid-1 { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px; }
+
+  .sensor-card {
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.3s;
+  }
+
+  .sensor-card:hover { transform: translateY(-2px); }
+  .sensor-card.alerta { border-color: var(--alerta); }
+  .sensor-card.peligro { border-color: var(--peligro); }
+  .sensor-card.ok { border-color: var(--verde); }
+
+  .sensor-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .sensor-card.alerta::before { background: var(--alerta); }
+  .sensor-card.peligro::before { background: var(--peligro); }
+  .sensor-card.ok::before { background: var(--verde-neon); }
+
+  .card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--texto2);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .card-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .card-value.alerta { color: var(--alerta); }
+  .card-value.peligro { color: var(--peligro); }
+  .card-value.ok { color: var(--verde-neon); }
+
+  .card-unit { font-size: 13px; font-weight: 400; opacity: 0.6; }
+
+  .card-bar {
+    margin-top: 10px;
+    height: 4px;
+    background: var(--borde);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .card-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  .card-bar-fill.ok { background: var(--verde-neon); }
+  .card-bar-fill.alerta { background: var(--alerta); }
+  .card-bar-fill.peligro { background: var(--peligro); }
+
+  /* CARD XYZ */
+  .xyz-card {
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+
+  .xyz-title {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--texto2); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .xyz-row {
+    display: flex; align-items: center;
+    margin-bottom: 10px; gap: 10px;
+  }
+
+  .xyz-axis {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px; font-weight: 700;
+    width: 20px; color: var(--verde-neon);
+  }
+
+  .xyz-bar-wrap { flex: 1; height: 8px; background: var(--borde); border-radius: 4px; overflow: hidden; }
+  .xyz-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .xyz-x .xyz-bar-fill { background: #f94144; }
+  .xyz-y .xyz-bar-fill { background: #f3722c; }
+  .xyz-z .xyz-bar-fill { background: var(--verde-neon); }
+
+  .xyz-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px; width: 48px; text-align: right;
+    color: var(--texto2);
+  }
+
+  /* RIEGO */
+  .riego-card {
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .riego-info .riego-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--texto2); margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .riego-estado {
+    font-size: 20px; font-weight: 800;
+  }
+
+  .riego-estado.on { color: var(--agua); }
+  .riego-estado.off { color: var(--texto2); }
+
+  .toggle-btn {
+    width: 56px; height: 30px;
+    background: var(--borde);
+    border-radius: 15px;
+    border: none; cursor: pointer;
+    position: relative; transition: background 0.3s;
+  }
+
+  .toggle-btn.on { background: var(--agua); }
+
+  .toggle-btn::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 24px; height: 24px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+  }
+
+  .toggle-btn.on::after { transform: translateX(26px); }
+
+  /* HISTORIAL */
+  .chart-wrap {
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+
+  .chart-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--texto2); margin-bottom: 14px;
+  }
+
+  canvas { width: 100% !important; display: block; }
+
+  /* IA PANEL */
+  .ia-header {
+    background: linear-gradient(135deg, var(--fondo3), var(--card));
+    border: 1px solid var(--verde);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .ia-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--verde), var(--verde-neon));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+
+  .ia-title { font-size: 16px; font-weight: 800; }
+  .ia-subtitle { font-size: 11px; color: var(--texto2); margin-top: 2px; }
+
+  .btn-analizar {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--verde), var(--verde-neon));
+    border: none; border-radius: 12px;
+    color: var(--fondo); font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 800;
+    cursor: pointer; letter-spacing: 0.5px;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-bottom: 14px;
+  }
+
+  .btn-analizar:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-analizar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .ia-resultado {
+    background: var(--card);
+    border: 1px solid var(--borde);
+    border-radius: 16px;
+    padding: 16px;
+    min-height: 120px;
+  }
+
+  .ia-loading {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--texto2); font-size: 13px;
+  }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--borde);
+    border-top-color: var(--verde-neon);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ia-texto {
+    font-size: 13px; line-height: 1.7;
+    color: var(--texto);
+  }
+
+  .ia-texto .alerta-tag {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.5px; margin-right: 4px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .alerta-tag.warn { background: rgba(247,127,0,0.2); color: var(--alerta); }
+  .alerta-tag.ok { background: rgba(116,198,157,0.2); color: var(--verde-neon); }
+  .alerta-tag.info { background: rgba(72,149,239,0.2); color: var(--agua); }
+  .alerta-tag.danger { background: rgba(214,40,40,0.2); color: var(--peligro); }
+
+  .ia-placeholder {
+    text-align: center; padding: 20px;
+    color: var(--texto2); font-size: 13px;
+    opacity: 0.6;
+  }
+
+  /* HISTORIAL TABLA */
+  .hist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+  }
+
+  .hist-table th {
+    padding: 8px 6px;
+    text-align: left;
+    color: var(--texto2);
+    border-bottom: 1px solid var(--borde);
+    letter-spacing: 0.5px;
+  }
+
+  .hist-table td {
+    padding: 7px 6px;
+    border-bottom: 1px solid rgba(42,61,44,0.4);
+    color: var(--texto);
+  }
+
+  .hist-table tr:last-child td { border-bottom: none; }
+
+  /* NAV BOTTOM */
+  .nav-bottom {
+    position: fixed; bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 480px;
+    background: rgba(10,15,13,0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--borde);
+    display: flex; padding: 8px 0 12px;
+    z-index: 100;
+  }
+
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+    background: none; border: none; cursor: pointer;
+    color: var(--texto2); font-family: 'Syne', sans-serif;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.3px;
+    padding: 6px 0; transition: color 0.2s;
+  }
+
+  .nav-btn.active { color: var(--verde-neon); }
+  .nav-btn .nav-ico { font-size: 20px; }
+
+  /* Entrada animada */
+  .sensor-card, .xyz-card, .riego-card, .chart-wrap, .ia-header, .ia-resultado {
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🌿</div>
+      <div class="logo-text">Agro<span>Sense</span></div>
+    </div>
+    <div class="status-dot">
+      <div class="dot"></div>
+      EN VIVO
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dashboard', this)">Dashboard</button>
+    <button class="tab" onclick="showTab('historial', this)">Historial</button>
+    <button class="tab" onclick="showTab('ia', this)">IA</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel active" id="tab-dashboard">
+    <div class="timestamp" id="timestamp">Actualizando...</div>
+
+    <div class="grid-2">
+      <div class="sensor-card ok" id="card-temp">
+        <div class="card-label">🌡️ Temperatura</div>
+        <div class="card-value ok" id="val-temp">--<span class="card-unit">°C</span></div>
+        <div class="card-bar"><div class="card-bar-fill ok" id="bar-temp" style="width:0%"></div></div>
+      </div>
+
+      <div class="sensor-card ok" id="card-haire">
+        <div class="card-label">💨 Hum. Aire</div>
+        <div class="card-value ok" id="val-haire">--<span class="card-unit">%</span></div>
+        <div class="card-bar"><div class="card-bar-fill ok" id="bar-haire" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="grid-1">
+      <div class="sensor-card ok" id="card-hsuelo">
+        <div class="card-label">🌱 Humedad del Suelo</div>
+        <div class="card-value ok" id="val-hsuelo">--<span class="card-unit">%</span></div>
+        <div class="card-bar"><div class="card-bar-fill ok" id="bar-hsuelo" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="xyz-card">
+      <div class="xyz-title">📏 Crecimiento — Ejes XYZ</div>
+      <div class="xyz-row xyz-x">
+        <div class="xyz-axis">X</div>
+        <div class="xyz-bar-wrap"><div class="xyz-bar-fill" id="bar-x" style="width:0%"></div></div>
+        <div class="xyz-val" id="val-x">-- cm</div>
+      </div>
+      <div class="xyz-row xyz-y">
+        <div class="xyz-axis">Y</div>
+        <div class="xyz-bar-wrap"><div class="xyz-bar-fill" id="bar-y" style="width:0%"></div></div>
+        <div class="xyz-val" id="val-y">-- cm</div>
+      </div>
+      <div class="xyz-row xyz-z">
+        <div class="xyz-axis">Z</div>
+        <div class="xyz-bar-wrap"><div class="xyz-bar-fill" id="bar-z" style="width:0%"></div></div>
+        <div class="xyz-val" id="val-z">-- cm</div>
+      </div>
+    </div>
+
+    <div class="riego-card" id="card-riego">
+      <div class="riego-info">
+        <div class="riego-label">💧 Riego Automático</div>
+        <div class="riego-estado off" id="riego-estado">INACTIVO</div>
+        <div style="font-size:11px; color:var(--texto2); margin-top:4px;" id="riego-motivo">Esperando datos...</div>
+      </div>
+      <button class="toggle-btn" id="toggle-riego" onclick="toggleRiego()"></button>
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="panel" id="tab-historial">
+    <div class="timestamp" id="timestamp2">Últimas 10 lecturas</div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">📈 Temperatura & Humedad Suelo</div>
+      <canvas id="chartTemp" height="140"></canvas>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">📊 Historial de lecturas</div>
+      <div style="overflow-x:auto;">
+        <table class="hist-table" id="tabla-hist">
+          <thead>
+            <tr>
+              <th>HORA</th>
+              <th>TEMP</th>
+              <th>H.AIRE</th>
+              <th>H.SUELO</th>
+              <th>Z</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-hist"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- IA -->
+  <div class="panel" id="tab-ia">
+    <div class="ia-header">
+      <div class="ia-icon">🤖</div>
+      <div>
+        <div class="ia-title">Diagnóstico IA</div>
+        <div class="ia-subtitle">Análisis inteligente de tus cultivos</div>
+      </div>
+    </div>
+
+    <button class="btn-analizar" id="btn-ia" onclick="analizarConIA()">
+      🔍 Analizar con Inteligencia Artificial
+    </button>
+
+    <div class="ia-resultado" id="ia-resultado">
+      <div class="ia-placeholder">
+        🌿 Presiona el botón para que la IA analice los datos actuales de tus sensores y genere un diagnóstico completo.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav-bottom">
+  <button class="nav-btn active" id="nav-dashboard" onclick="showTab('dashboard', null, 'nav-dashboard')">
+    <span class="nav-ico">📊</span>Dashboard
+  </button>
+  <button class="nav-btn" id="nav-historial" onclick="showTab('historial', null, 'nav-historial')">
+    <span class="nav-ico">📈</span>Historial
+  </button>
+  <button class="nav-btn" id="nav-ia" onclick="showTab('ia', null, 'nav-ia')">
+    <span class="nav-ico">🤖</span>IA
+  </button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// ─── ESTADO GLOBAL ───────────────────────────────────────────
+let datos = { temp: 0, haire: 0, hsuelo: 0, x: 0, y: 0, z: 0, riego: false };
+let riegoManual = false;
+let historial = [];
+let chartTemp = null;
+let tabActual = 'dashboard';
+
+// ─── SIMULADOR ───────────────────────────────────────────────
+function simularDatos() {
+  const hora = new Date().getHours();
+  const esDia = hora >= 6 && hora <= 18;
+
+  // Temperatura: sube de día, baja de noche
+  const baseTemp = esDia ? 26 + Math.random() * 8 : 16 + Math.random() * 5;
+  datos.temp = parseFloat(baseTemp.toFixed(1));
+
+  // Humedad aire inversamente proporcional a temperatura
+  datos.haire = Math.round(85 - datos.temp * 1.2 + (Math.random() * 10 - 5));
+  datos.haire = Math.min(95, Math.max(30, datos.haire));
+
+  // Humedad suelo: baja si hace calor y no riega
+  if (!datos.riego && !riegoManual) {
+    datos.hsuelo = Math.max(10, datos.hsuelo - (datos.temp > 30 ? 2 : 0.5) + (Math.random() * 1 - 0.3));
+  } else {
+    datos.hsuelo = Math.min(90, datos.hsuelo + 3 + Math.random() * 2);
+  }
+  datos.hsuelo = parseFloat(datos.hsuelo.toFixed(1));
+  if (datos.hsuelo === 0) datos.hsuelo = 45;
+
+  // XYZ: crecimiento lento simulado
+  datos.x = parseFloat((datos.x + (Math.random() * 0.05)).toFixed(2));
+  datos.y = parseFloat((datos.y + (Math.random() * 0.04)).toFixed(2));
+  datos.z = parseFloat((datos.z + (Math.random() * 0.1)).toFixed(2));
+
+  // Riego automático: activa si humedad suelo < 30%
+  if (!riegoManual) {
+    datos.riego = datos.hsuelo < 30;
+  }
+
+  guardarHistorial();
+  actualizarUI();
+}
+
+// ─── HISTORIAL ───────────────────────────────────────────────
+function guardarHistorial() {
+  const ahora = new Date();
+  const entrada = {
+    hora: ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    temp: datos.temp,
+    haire: datos.haire,
+    hsuelo: datos.hsuelo,
+    z: datos.z
+  };
+  historial.unshift(entrada);
+  if (historial.length > 20) historial.pop();
+}
+
+// ─── UI DASHBOARD ────────────────────────────────────────────
+function actualizarUI() {
+  // Timestamp
+  const ts = new Date().toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'medium' });
+  document.getElementById('timestamp').textContent = '🕐 ' + ts;
+  document.getElementById('timestamp2').textContent = '🕐 Actualizado: ' + ts;
+
+  // Temperatura
+  const nivelTemp = datos.temp > 35 ? 'peligro' : datos.temp > 30 ? 'alerta' : 'ok';
+  setCard('card-temp', 'val-temp', 'bar-temp', datos.temp, '°C', nivelTemp, datos.temp / 50 * 100);
+
+  // Humedad aire
+  const nivelHA = datos.haire > 85 ? 'alerta' : datos.haire < 40 ? 'alerta' : 'ok';
+  setCard('card-haire', 'val-haire', 'bar-haire', datos.haire, '%', nivelHA, datos.haire);
+
+  // Humedad suelo
+  const nivelHS = datos.hsuelo < 20 ? 'peligro' : datos.hsuelo < 35 ? 'alerta' : 'ok';
+  setCard('card-hsuelo', 'val-hsuelo', 'bar-hsuelo', datos.hsuelo, '%', nivelHS, datos.hsuelo);
+
+  // XYZ
+  const maxZ = 30;
+  document.getElementById('val-x').textContent = datos.x + ' cm';
+  document.getElementById('val-y').textContent = datos.y + ' cm';
+  document.getElementById('val-z').textContent = datos.z + ' cm';
+  document.getElementById('bar-x').style.width = Math.min(100, datos.x / 5 * 100) + '%';
+  document.getElementById('bar-y').style.width = Math.min(100, datos.y / 5 * 100) + '%';
+  document.getElementById('bar-z').style.width = Math.min(100, datos.z / maxZ * 100) + '%';
+
+  // Riego
+  const riegoEl = document.getElementById('riego-estado');
+  const toggleEl = document.getElementById('toggle-riego');
+  const motivoEl = document.getElementById('riego-motivo');
+
+  if (datos.riego || riegoManual) {
+    riegoEl.textContent = 'ACTIVO';
+    riegoEl.className = 'riego-estado on';
+    toggleEl.className = 'toggle-btn on';
+    motivoEl.textContent = riegoManual ? '⚙️ Activado manualmente' : '🤖 Activado automáticamente (suelo seco)';
+    document.getElementById('card-riego').style.borderColor = 'var(--agua)';
+  } else {
+    riegoEl.textContent = 'INACTIVO';
+    riegoEl.className = 'riego-estado off';
+    toggleEl.className = 'toggle-btn';
+    motivoEl.textContent = datos.hsuelo >= 30 ? '✅ Suelo con humedad adecuada' : 'En espera...';
+    document.getElementById('card-riego').style.borderColor = 'var(--borde)';
+  }
+
+  // Historial tabla
+  actualizarTabla();
+  actualizarGrafica();
+}
+
+function setCard(cardId, valId, barId, valor, unidad, nivel, pct) {
+  const card = document.getElementById(cardId);
+  const val = document.getElementById(valId);
+  const bar = document.getElementById(barId);
+
+  card.className = 'sensor-card ' + nivel;
+  val.className = 'card-value ' + nivel;
+  val.innerHTML = valor + '<span class="card-unit">' + unidad + '</span>';
+  bar.className = 'card-bar-fill ' + nivel;
+  bar.style.width = Math.min(100, pct) + '%';
+}
+
+// ─── TABLA ───────────────────────────────────────────────────
+function actualizarTabla() {
+  const tbody = document.getElementById('tbody-hist');
+  tbody.innerHTML = historial.slice(0, 10).map(h => `
+    <tr>
+      <td>${h.hora}</td>
+      <td style="color:${h.temp > 30 ? 'var(--alerta)' : 'var(--verde-neon)'}">${h.temp}°</td>
+      <td>${h.haire}%</td>
+      <td style="color:${h.hsuelo < 30 ? 'var(--peligro)' : 'var(--verde-neon)'}">${h.hsuelo}%</td>
+      <td>${h.z}cm</td>
+    </tr>
+  `).join('');
+}
+
+// ─── GRÁFICA ─────────────────────────────────────────────────
+function actualizarGrafica() {
+  if (tabActual !== 'historial') return;
+  const datos10 = historial.slice(0, 10).reverse();
+  const labels = datos10.map(h => h.hora.slice(0, 5));
+  const temps = datos10.map(h => h.temp);
+  const hsuelos = datos10.map(h => h.hsuelo);
+
+  if (!chartTemp) {
+    const ctx = document.getElementById('chartTemp').getContext('2d');
+    chartTemp = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Temperatura °C',
+            data: temps,
+            borderColor: '#f77f00',
+            backgroundColor: 'rgba(247,127,0,0.08)',
+            tension: 0.4, fill: true, pointRadius: 3
+          },
+          {
+            label: 'Hum. Suelo %',
+            data: hsuelos,
+            borderColor: '#74c69d',
+            backgroundColor: 'rgba(116,198,157,0.08)',
+            tension: 0.4, fill: true, pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: '#a5c8a7', font: { size: 10 } } }
+        },
+        scales: {
+          x: { ticks: { color: '#a5c8a7', font: { size: 9 } }, grid: { color: 'rgba(42,61,44,0.5)' } },
+          y: { ticks: { color: '#a5c8a7', font: { size: 9 } }, grid: { color: 'rgba(42,61,44,0.5)' } }
+        }
+      }
+    });
+  } else {
+    chartTemp.data.labels = labels;
+    chartTemp.data.datasets[0].data = temps;
+    chartTemp.data.datasets[1].data = hsuelos;
+    chartTemp.update();
+  }
+}
+
+// ─── RIEGO MANUAL ────────────────────────────────────────────
+function toggleRiego() {
+  riegoManual = !riegoManual;
+  datos.riego = riegoManual;
+  actualizarUI();
+}
+
+// ─── TABS ────────────────────────────────────────────────────
+function showTab(nombre, tabEl, navId) {
+  tabActual = nombre;
+
+  // Tabs superiores
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+
+  // Nav inferior
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (navId) document.getElementById(navId).classList.add('active');
+
+  // Sincronizar tabs y nav
+  const tabMap = { dashboard: 'nav-dashboard', historial: 'nav-historial', ia: 'nav-ia' };
+  document.getElementById(tabMap[nombre])?.classList.add('active');
+
+  const tabsEl = document.querySelectorAll('.tab');
+  const idx = ['dashboard', 'historial', 'ia'].indexOf(nombre);
+  if (idx >= 0) tabsEl[idx]?.classList.add('active');
+
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + nombre).classList.add('active');
+
+  if (nombre === 'historial') setTimeout(actualizarGrafica, 50);
+}
+
+// ─── ANÁLISIS IA ─────────────────────────────────────────────
+async function analizarConIA() {
+  const btn = document.getElementById('btn-ia');
+  const resultado = document.getElementById('ia-resultado');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Analizando...';
+
+  resultado.innerHTML = `
+    <div class="ia-loading">
+      <div class="spinner"></div>
+      La IA está analizando los datos de tus sensores...
+    </div>
+  `;
+
+  const prompt = `Eres un ingeniero agrónomo y ambiental experto. Analiza los siguientes datos de sensores de un cultivo y genera un diagnóstico detallado en español.
+
+DATOS ACTUALES:
+- Temperatura ambiente: ${datos.temp}°C
+- Humedad del aire: ${datos.haire}%
+- Humedad del suelo: ${datos.hsuelo}%
+- Crecimiento eje X: ${datos.x} cm
+- Crecimiento eje Y: ${datos.y} cm
+- Crecimiento eje Z (altura): ${datos.z} cm
+- Riego automático: ${datos.riego ? 'ACTIVO' : 'INACTIVO'}
+- Historial reciente (últimas 3 lecturas): ${historial.slice(0,3).map(h => `T:${h.temp}°C HS:${h.hsuelo}%`).join(' | ')}
+
+Responde con:
+1. 🔍 DIAGNÓSTICO GENERAL (2-3 oraciones)
+2. ⚠️ ALERTAS Y PROBLEMAS detectados (si hay)
+3. ✅ ESTADO ÓPTIMO de cada variable (qué está bien)
+4. 💡 RECOMENDACIONES concretas (máximo 4 puntos)
+5. 🚿 DECISIÓN DE RIEGO: justifica si debe activarse o no
+
+Sé específico, usa lenguaje técnico pero comprensible. Máximo 200 palabras.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+    const texto = data.content?.[0]?.text || 'No se pudo obtener respuesta.';
+
+    // Formatear respuesta
+    const html = texto
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>')
+      .replace(/⚠️/g, '<span class="alerta-tag warn">⚠️ ALERTA</span>')
+      .replace(/✅/g, '<span class="alerta-tag ok">✅ OK</span>')
+      .replace(/💡/g, '<span class="alerta-tag info">💡 TIP</span>')
+      .replace(/🚿/g, '<span class="alerta-tag info">🚿 RIEGO</span>')
+      .replace(/🔍/g, '<span class="alerta-tag ok">🔍 DIAGNÓSTICO</span>');
+
+    resultado.innerHTML = `<div class="ia-texto">${html}</div>`;
+
+  } catch (err) {
+    resultado.innerHTML = `
+      <div class="ia-texto">
+        <span class="alerta-tag warn">⚠️ ERROR</span><br><br>
+        No se pudo conectar con la IA. Verifica tu conexión a internet.<br><br>
+        <strong>Análisis local:</strong><br>
+        ${analisisLocal()}
+      </div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔍 Analizar con Inteligencia Artificial';
+}
+
+function analisisLocal() {
+  let msgs = [];
+  if (datos.temp > 35) msgs.push('🌡️ Temperatura crítica (>35°C). Riesgo de estrés térmico en la planta.');
+  else if (datos.temp > 30) msgs.push('🌡️ Temperatura alta. Monitorear de cerca.');
+  else msgs.push('🌡️ Temperatura en rango óptimo.');
+
+  if (datos.hsuelo < 20) msgs.push('💧 Humedad del suelo CRÍTICA. Activar riego urgente.');
+  else if (datos.hsuelo < 35) msgs.push('💧 Humedad del suelo baja. Se recomienda riego.');
+  else msgs.push('💧 Humedad del suelo adecuada.');
+
+  if (datos.haire > 85) msgs.push('💨 Humedad del aire muy alta. Riesgo de hongos y enfermedades.');
+
+  return msgs.join('<br>');
+}
+
+// ─── INICIO ──────────────────────────────────────────────────
+// Inicializar datos
+datos.hsuelo = 45 + Math.random() * 20;
+datos.temp = 22 + Math.random() * 5;
+datos.haire = 60 + Math.random() * 15;
+datos.x = Math.random() * 2;
+datos.y = Math.random() * 1.5;
+datos.z = 5 + Math.random() * 10;
+
+simularDatos();
+setInterval(simularDatos, 5000);
+</script>
+</body>
+</html>
